@@ -19,8 +19,8 @@ class Quests(models.Model):
     task = models.CharField(max_length=200, blank=True, null=True)
     zone = models.CharField(max_length=100, choices=ZONE_CHOICES, blank=True, null=True)
     due_date = models.CharField(max_length=50, choices=DUE_DATE, blank=True, null=True)
+    due_time = models.TimeField(blank=True, null=True)
     select_a_date = models.DateField(blank=True, null=True)
-    due_time = models.TimeField(blank=False, null=True)
     enable_call = models.BooleanField(default=False)
     repeat_quest = models.BooleanField(default=False)
     set_alarm = models.BooleanField(default=False)
@@ -29,7 +29,7 @@ class Quests(models.Model):
 
     def save(self, *args, **kwargs):
         if self.select_a_date:
-            self.due_date = self.select_a_date
+            self.due_date = str(self.select_a_date)
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -15,10 +15,16 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'profiles', ProfileViewSet, basename='profile')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('profiles/', ProfileViewSet.as_view({
+        'get': 'list',     
+        'post': 'create',   
+        'put': 'update',   
+        'patch': 'partial_update',
+        'delete': 'destroy'
+    }), name='profile-detail'),
     path('auth/register/', RegisterAPI.as_view(), name='auth-register'),
     path('auth/verify-otp/', VerifyOTPView.as_view(), name='auth-verify-otp'),
     path('auth/resend-otp/', ResendOTPView.as_view(), name='auth-resend-otp'), 
