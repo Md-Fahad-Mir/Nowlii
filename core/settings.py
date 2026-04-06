@@ -57,6 +57,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "Apps.users",
     "Apps.quests",
+    "Apps.subtask_generator",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -265,3 +266,10 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
 }
 
+
+# ------------------------------------------------------------------------------
+# Anthropic API Key
+# ------------------------------------------------------------------------------
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", default=None)
+OPENAI_API_KEY    = os.getenv("OPENAI_API_KEY", default=None)
+GOOGLE_AI_API_KEY = os.getenv("GOOGLE_AI_API_KEY", default=None)
