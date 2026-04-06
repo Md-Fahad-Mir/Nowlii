@@ -9,4 +9,3 @@ router.register(r'quests', QuestsViewset)
 urlpatterns = [
     path('', include(router.urls)),
 ]
-

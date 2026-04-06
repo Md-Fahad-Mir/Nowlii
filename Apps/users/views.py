@@ -7,6 +7,7 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -76,9 +77,32 @@ from .serializers import (
     tags=['Profile']
 ))
 class ProfileViewSet(viewsets.ModelViewSet):
-    queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticated]    
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Profile.objects.filter(user=self.request.user)
+
+    def get_object(self):
+        obj = self.get_queryset().first()
+        if not obj:
+            from django.http import Http404
+            raise Http404("No profile found.")
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def update(self, request, *args, **kwargs):
+        kwargs['pk'] = self.get_object().pk
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        kwargs['pk'] = self.get_object().pk
+        return super().destroy(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        if Profile.objects.filter(user=self.request.user).exists():
+            raise ValidationError({"detail": "You already have a profile. You can only update or delete it."})
+        serializer.save(user=self.request.user)
 
 
 # ------------------------------------------------------------------------------

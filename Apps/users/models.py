@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.utils import timezone
 from django.db import models
 import random
+from django.conf import settings
 
 
 # ------------------------------------------------------------------------------
@@ -151,7 +152,6 @@ class ForgotPasswordRequest(models.Model):
 # PROFILE
 # ------------------------------------------------------------------------------
 class Profile(models.Model):
-    
     GENDER_CHOICES = [
         ('I’m a man', 'I’m a man'),
         ('I’m a woman', 'I’m a woman'),
@@ -178,6 +178,7 @@ class Profile(models.Model):
         ('Female', 'Female'),
     ]
 
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile', null=True, blank=True)
     name = models.CharField(max_length=50, blank=True, null=True)
     gender = models.CharField(max_length=150, choices=GENDER_CHOICES, blank=True, null=True)
     profile_image = models.URLField(blank=True, null=True)
