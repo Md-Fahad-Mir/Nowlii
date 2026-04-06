@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 # ------------------------------------------------------------------------------
 # QUESTS
@@ -11,15 +14,10 @@ class Quests(models.Model):
         ('Stretch zone', 'Stretch zone'),
     ]
 
-    DUE_DATE= [
-        ('Today', 'Today'),
-        ('Tomorrow', 'Tomorrow'),
-    ]
 
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     task = models.CharField(max_length=200, blank=True, null=True)
     zone = models.CharField(max_length=100, choices=ZONE_CHOICES, blank=True, null=True)
-    due_date = models.CharField(max_length=50, choices=DUE_DATE, blank=True, null=True)
-    due_time = models.TimeField(blank=True, null=True)
     select_a_date = models.DateField(blank=True, null=True)
     enable_call = models.BooleanField(default=False)
     repeat_quest = models.BooleanField(default=False)
@@ -28,8 +26,6 @@ class Quests(models.Model):
 
 
     def save(self, *args, **kwargs):
-        if self.select_a_date:
-            self.due_date = str(self.select_a_date)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -44,11 +40,11 @@ class Quests(models.Model):
 # ------------------------------------------------------------------------------
 class SubTasks(models.Model):
     task = models.ForeignKey(Quests, related_name='subtasks', on_delete=models.CASCADE)
-    name = models.CharField(max_length=50, blank=True, null=True)
-    is_complete = models.BooleanField(default=False)
+    title = models.CharField(max_length=50, blank=True, null=True)
+    task_done = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.name
+        return self.title
     
     class Meta:
         verbose_name_plural = 'subtasks'

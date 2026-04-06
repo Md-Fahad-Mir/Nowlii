@@ -3,32 +3,36 @@ from .models import Quests, SubTasks
 
 
 # ------------------------------------------------------------------------------
-# QUESTS
-# ------------------------------------------------------------------------------
-class QuestsSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = Quests
-        fields = '__all__'
-
-    def to_internal_value(self, data):
-        if hasattr(data, '_mutable'):
-            mutable_data = data.copy()
-        else:
-            import copy
-            mutable_data = copy.copy(data)
-            
-        if mutable_data.get('select_a_date') == '':
-            mutable_data['select_a_date'] = None
-        if mutable_data.get('due_time') == '':
-            mutable_data['due_time'] = None
-            
-        return super().to_internal_value(mutable_data)
-
-
-# ------------------------------------------------------------------------------
 # SUBTASKS
 # ------------------------------------------------------------------------------
 class SubTasksSerializers(serializers.ModelSerializer):
     class Meta:
         model = SubTasks
-        fields = '__all__'
+        exclude = ['task']
+
+
+# ------------------------------------------------------------------------------
+# QUESTS
+# ------------------------------------------------------------------------------
+class QuestsSerializers(serializers.ModelSerializer):
+    subtasks = SubTasksSerializers(many=True, required=False)
+    
+    class Meta:
+        model = Quests
+        exclude = ['user']
+
+    def create(self, validated_data):
+        subtasks_data = validated_data.pop('subtasks', [])
+        quest = Quests.objects.create(**validated_data)
+        for subtask_data in subtasks_data:
+            SubTasks.objects.create(task=quest, **subtask_data)
+        return quest
+
+    def update(self, instance, validated_data):
+        subtasks_data = validated_data.pop('subtasks', None)
+        instance = super().update(instance, validated_data)
+        if subtasks_data is not None:
+            instance.subtasks.all().delete()
+            for subtask_data in subtasks_data:
+                SubTasks.objects.create(task=instance, **subtask_data)
+        return instance
