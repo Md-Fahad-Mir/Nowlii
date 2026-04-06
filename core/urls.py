@@ -25,6 +25,7 @@ urlpatterns = [
 
     path('api/', include('Apps.users.urls')),
     path('api/', include('Apps.quests.urls')),
+    path("api/subtasks/", include("Apps.subtask_generator.urls")),
 
     path('accounts/', include('allauth.urls')),
     

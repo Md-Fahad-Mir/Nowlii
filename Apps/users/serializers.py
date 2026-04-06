@@ -7,6 +7,9 @@ from rest_framework import serializers
 # PROFILE
 # ------------------------------------------------------------------------------
 class ProfileSerializer(serializers.ModelSerializer):
+    profile_image = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    avatar_logo = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+
     class Meta:
         model = Profile
         fields = '__all__'
