@@ -18,6 +18,7 @@ class Quests(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     task = models.CharField(max_length=200, blank=True, null=True)
     zone = models.CharField(max_length=100, choices=ZONE_CHOICES, blank=True, null=True)
+    select_a_time = models.TimeField(blank=True, null=True)
     select_a_date = models.DateField(blank=True, null=True)
     enable_call = models.BooleanField(default=False)
     repeat_quest = models.BooleanField(default=False)
