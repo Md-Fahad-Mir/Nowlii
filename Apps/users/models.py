@@ -149,6 +149,17 @@ class ForgotPasswordRequest(models.Model):
 
 
 # ------------------------------------------------------------------------------
+# NOWLII PREDEFINED OPTIONS
+# ------------------------------------------------------------------------------
+class NowliiPredefinedOption(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    avatar_logo = models.URLField()
+
+    def __str__(self):
+        return self.name
+
+
+# ------------------------------------------------------------------------------
 # PROFILE
 # ------------------------------------------------------------------------------
 class Profile(models.Model):
@@ -156,15 +167,6 @@ class Profile(models.Model):
         ("I’m a man", "I’m a man"),
         ("I’m a woman", "I’m a woman"),
         ("Another gender", "Another gender"), 
-    ]
-
-    NOWLII_NAME_CHOICES = [
-        ('milo', 'milo'),
-        ('bloop', 'bloop'),
-        ('gumo', 'gumo'),
-        ('knotty', 'knotty'),
-        ('fizzy', 'fizzy'),
-        ('zee', 'zee'),
     ]
 
     LANGUAGE_CHOICES = [
@@ -182,15 +184,31 @@ class Profile(models.Model):
     name = models.CharField(max_length=50, blank=True, null=True)
     gender = models.CharField(max_length=150, choices=GENDER_CHOICES, blank=True, null=True)
     profile_image = models.URLField(blank=True, null=True)
-    avatar_logo = models.URLField(blank=True, null=True)
-    nowlii_name = models.CharField(max_length=50, choices=NOWLII_NAME_CHOICES, blank=True, null=True)
+    
+    # Redesigned fields
+    predefined_option = models.ForeignKey(NowliiPredefinedOption, on_delete=models.SET_NULL, null=True, blank=True)
+    avatar_logo = models.URLField(blank=True, null=True)  # Denormalized for quick access or custom override
+    nowlii_name = models.CharField(max_length=50, blank=True, null=True) # Denormalized for quick access or custom override
     custom_nowlii_name = models.CharField(max_length=50, blank=True, null=True)
+    
     language = models.CharField(max_length=50, choices=LANGUAGE_CHOICES, default='English', blank=True, null=True)
     voice = models.CharField(max_length=50, choices=VOICE_CHOOSE, default='Male', blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        if self.custom_nowlii_name:
-            self.nowlii_name = self.custom_nowlii_name
+        # Handle nowlii name and logo logic
+        if self.predefined_option:
+            # Default to predefined logo
+            self.avatar_logo = self.predefined_option.avatar_logo
+            # Name is custom if provided, else predefined
+            if self.custom_nowlii_name:
+                self.nowlii_name = self.custom_nowlii_name
+            else:
+                self.nowlii_name = self.predefined_option.name
+        else:
+            # If no predefined option, but custom name exists
+            if self.custom_nowlii_name:
+                self.nowlii_name = self.custom_nowlii_name
+            
         super().save(*args, **kwargs)
 
     def __str__(self):

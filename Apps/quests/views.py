@@ -73,6 +73,66 @@ class QuestsViewset(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    @swagger_auto_schema(
+        operation_summary="Bulk delete quests",
+        operation_description="Delete multiple quests at once by providing a list of IDs.",
+        tags=['Quests'],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['ids'],
+            properties={
+                'ids': openapi.Schema(
+                    type=openapi.TYPE_ARRAY, 
+                    items=openapi.Items(type=openapi.TYPE_INTEGER),
+                    description="List of Quest IDs to delete",
+                    example=[1, 2, 3]
+                ),
+            },
+        ),
+        responses={
+            204: "Successfully deleted",
+            400: "Invalid input"
+        }
+    )
+    @action(detail=False, methods=['delete'], url_path='bulk-delete')
+    def bulk_delete(self, request):
+        """
+        Deletes multiple quests at once.
+        Expects a JSON body: {"ids": [1, 2, 3]}
+        """
+        ids = request.data.get('ids', [])
+        
+        if not ids:
+            return Response(
+                {"error": "No IDs provided in the request body."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # We use self.get_queryset() to ensure users can only delete THEIR OWN quests
+        queryset = self.get_queryset().filter(id__in=ids)
+        deleted_count, _ = queryset.delete()
+
+        return Response(
+            {"message": f"Successfully deleted {deleted_count} quests."}, 
+            status=status.HTTP_204_NO_CONTENT
+        )    
+
+    @swagger_auto_schema(
+        operation_summary="Calculate user streak",
+        operation_description="Returns the current number of consecutive days where all quests for that day were completed.",
+        tags=['Quests'],
+        responses={
+            200: openapi.Response(
+                description="Current streak count",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'streak': openapi.Schema(type=openapi.TYPE_INTEGER, example=5)
+                    }
+                )
+            )
+        }
+    )
     @action(detail=False, methods=['get'], url_path='streak')
     def streak(self, request):
         # Get dates where all quests for that date are done

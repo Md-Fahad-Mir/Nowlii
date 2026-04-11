@@ -12,9 +12,11 @@ from .views import (
     VerifyForgotPasswordOTPView,
     SetNewPasswordAPI,
     ResetPasswordAPI,
+    NowliiPredefinedOptionViewSet,
 )
 
 router = DefaultRouter()
+router.register(r'nowlii-options', NowliiPredefinedOptionViewSet, basename='nowlii-options')
 
 urlpatterns = [
     path('', include(router.urls)),

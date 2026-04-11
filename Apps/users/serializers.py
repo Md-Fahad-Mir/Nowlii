@@ -1,6 +1,15 @@
-from .models import CustomUserModel, Profile
+from .models import CustomUserModel, Profile, NowliiPredefinedOption
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+
+
+# ------------------------------------------------------------------------------
+# NOWLII PREDEFINED OPTIONS
+# ------------------------------------------------------------------------------
+class NowliiPredefinedOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NowliiPredefinedOption
+        fields = '__all__'
 
 
 # ------------------------------------------------------------------------------
@@ -8,12 +17,14 @@ from rest_framework import serializers
 # ------------------------------------------------------------------------------
 class ProfileSerializer(serializers.ModelSerializer):
     profile_image = serializers.URLField(required=False, allow_null=True, allow_blank=True)
-    avatar_logo = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    
+    # Predefined option can be expanded or just ID
+    predefined_option_detail = NowliiPredefinedOptionSerializer(source='predefined_option', read_only=True)
 
     class Meta:
         model = Profile
         fields = '__all__'
-        read_only_fields = ['user']
+        read_only_fields = ['user', 'avatar_logo', 'nowlii_name']
 
 
 # ------------------------------------------------------------------------------

@@ -27,6 +27,7 @@ from .models import (
     Profile,
     PendingUser,
     ForgotPasswordRequest,
+    NowliiPredefinedOption,
 )
 
 from .serializers import (
@@ -40,7 +41,22 @@ from .serializers import (
     SetNewPasswordSerializer,
     ProfileSerializer,
     ResendOTPSerializer,
+    NowliiPredefinedOptionSerializer,
 )
+
+
+# ------------------------------------------------------------------------------
+# NOWLII PREDEFINED OPTIONS
+# ------------------------------------------------------------------------------
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_summary="List available Nowlii names and avatars",
+    operation_description="Fetch the list of predefined Nowlii options. Publicly accessible.",
+    tags=['Nowlii Options']
+))
+class NowliiPredefinedOptionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = NowliiPredefinedOption.objects.all()
+    serializer_class = NowliiPredefinedOptionSerializer
+    permission_classes = [AllowAny]
 
 
 # ------------------------------------------------------------------------------
@@ -317,8 +333,8 @@ class LoginAPI(APIView):
                         "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjQ...",
                         "user": {
                             "user_id": 1,
-                            "email": "john.doe@example.com",
-                            "username": "johndoe",
+                            "email": "admin@gmail.com",
+                            "username": "admin",
                             "is_superuser": False
                         }
                     }
@@ -368,7 +384,7 @@ class LoginAPI(APIView):
             'user': {
                 'user_id': user.id,
                 'email': user.email,
-                'username': user.username,
+#                'username': user.username,
                 'is_superuser': user.is_superuser
             }
         })
