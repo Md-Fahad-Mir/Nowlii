@@ -5,6 +5,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from .models import Quests, SubTasks
 from .serializers import QuestsSerializers, SubTasksSerializers
@@ -60,6 +61,7 @@ class QuestsViewset(viewsets.ModelViewSet):
     queryset = Quests.objects.all()
     serializer_class = QuestsSerializers
     permission_classes = [IsAuthenticated]
+
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -196,3 +198,4 @@ class SubTasksViewset(viewsets.ModelViewSet):
     queryset = SubTasks.objects.all()
     serializer_class = SubTasksSerializers
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
