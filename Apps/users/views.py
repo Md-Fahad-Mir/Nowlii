@@ -5,7 +5,7 @@ from django.utils.decorators import method_decorator
 
 from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
@@ -96,10 +96,17 @@ class NowliiPredefinedOptionViewSet(viewsets.ReadOnlyModelViewSet):
 class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_queryset(self):
         return Profile.objects.filter(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        obj = self.get_queryset().first()
+        if not obj:
+            return Response({"detail": "No profile found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(obj)
+        return Response(serializer.data)
 
     def get_object(self):
         obj = self.get_queryset().first()
@@ -128,7 +135,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 # ------------------------------------------------------------------------------
 class RegisterAPI(APIView):
     permission_classes = [AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     
     @swagger_auto_schema(
         operation_summary="Register new user",
@@ -187,7 +194,7 @@ class RegisterAPI(APIView):
 # ------------------------------------------------------------------------------
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     
     @swagger_auto_schema(
         operation_summary="Verify Register OTP",
@@ -259,7 +266,7 @@ class VerifyOTPView(APIView):
 # ------------------------------------------------------------------------------
 class ResendOTPView(APIView):
     permission_classes = [AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     
     @swagger_auto_schema(
         operation_summary="Resend Registration OTP",
@@ -323,7 +330,7 @@ class ResendOTPView(APIView):
 # ------------------------------------------------------------------------------
 class LoginAPI(APIView):
     permission_classes = [AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     
     @swagger_auto_schema(
         operation_summary="User login",
@@ -401,7 +408,7 @@ class LoginAPI(APIView):
 # ------------------------------------------------------------------------------
 class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     
     @swagger_auto_schema(
         operation_summary="User logout",
@@ -447,7 +454,7 @@ class LogoutAPIView(APIView):
 # ------------------------------------------------------------------------------
 class ForgotPasswordAPI(APIView):
     permission_classes = [AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     
     @swagger_auto_schema(
         operation_summary="Forgot password",
@@ -501,7 +508,7 @@ class ForgotPasswordAPI(APIView):
 # ------------------------------------------------------------------------------
 class VerifyForgotPasswordOTPView(APIView):
     permission_classes = [AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     @swagger_auto_schema(
         operation_summary="Verify Forgot Password OTP",
         operation_description="Verify the OTP sent to your email for Forgot password.",
@@ -558,7 +565,7 @@ class VerifyForgotPasswordOTPView(APIView):
 # ------------------------------------------------------------------------------
 class SetNewPasswordAPI(APIView):
     permission_classes = [AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     
     @swagger_auto_schema(
         operation_summary="Set new password (Forgot Password)",
@@ -625,7 +632,7 @@ class SetNewPasswordAPI(APIView):
 # ------------------------------------------------------------------------------
 class ResetPasswordAPI(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     
     @swagger_auto_schema(
         operation_summary="Reset password",

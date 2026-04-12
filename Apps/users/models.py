@@ -164,9 +164,9 @@ class NowliiPredefinedOption(models.Model):
 # ------------------------------------------------------------------------------
 class Profile(models.Model):
     GENDER_CHOICES = [
-        ("I’m a man", "I’m a man"),
-        ("I’m a woman", "I’m a woman"),
-        ("Another gender", "Another gender"), 
+        ("I'm a man", "I'm a man"),
+        ("I'm a woman", "I'm a woman"),
+        ("Another gender", "Another gender"),
     ]
 
     LANGUAGE_CHOICES = [

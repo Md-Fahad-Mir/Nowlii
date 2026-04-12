@@ -1,6 +1,39 @@
 from .models import CustomUserModel, Profile, NowliiPredefinedOption
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from rest_framework import serializers
+
+
+class NormalizedChoiceField(serializers.ChoiceField):
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            data = data.replace('’', "'").strip()
+        return super().to_internal_value(data)
+
+
+class URLOrUploadedFileField(serializers.Field):
+    def to_internal_value(self, data):
+        if data is None or data == "":
+            return None
+
+        if hasattr(data, 'read'):
+            filename = default_storage.save(
+                f'profile_images/{data.name}',
+                ContentFile(data.read())
+            )
+            try:
+                return default_storage.url(filename)
+            except Exception:
+                return filename
+
+        if isinstance(data, str):
+            return data.strip() or None
+
+        raise serializers.ValidationError('Invalid value for profile_image.')
+
+    def to_representation(self, value):
+        return value
 
 
 # ------------------------------------------------------------------------------
@@ -16,7 +49,8 @@ class NowliiPredefinedOptionSerializer(serializers.ModelSerializer):
 # PROFILE
 # ------------------------------------------------------------------------------
 class ProfileSerializer(serializers.ModelSerializer):
-    profile_image = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    profile_image = URLOrUploadedFileField(required=False, allow_null=True)
+    gender = NormalizedChoiceField(choices=Profile.GENDER_CHOICES, required=False, allow_null=True, allow_blank=True)
     
     # Predefined option can be expanded or just ID
     predefined_option_detail = NowliiPredefinedOptionSerializer(source='predefined_option', read_only=True)
