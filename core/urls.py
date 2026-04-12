@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.shortcuts import redirect
+from django.conf import settings
+from django.conf.urls.static import static
 
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
@@ -39,3 +41,7 @@ urlpatterns = [
     path('', redirect_to_docs, name='root-redirect'),
 
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

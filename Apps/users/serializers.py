@@ -33,6 +33,18 @@ class URLOrUploadedFileField(serializers.Field):
         raise serializers.ValidationError('Invalid value for profile_image.')
 
     def to_representation(self, value):
+        if not value:
+            return None
+        
+        # If it's already a full URL, return as is
+        if value.startswith(('http://', 'https://')):
+            return value
+        
+        # Build full URL for relative paths
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(value)
+        
         return value
 
 
