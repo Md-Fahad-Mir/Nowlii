@@ -58,6 +58,7 @@ LOCAL_APPS = [
     "Apps.users",
     "Apps.quests",
     "Apps.subtask_generator",
+    "Apps.insights",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -81,6 +82,27 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_EXPOSE_HEADERS = [
+    'Content-Type',
+    'X-CSRFToken',
+    'Authorization',
+]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+# Allow ngrok URLs dynamically
+CORS_ALLOW_ALL_ORIGINS = True
+
+
+# CSRF Configuration for API
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok-free.dev",
+    "https://*.ngrok.io",
+]
 
 
 
@@ -186,6 +208,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
     'DATETIME_FORMAT': "%d-%m-%Y %H:%M:%S",
+    'EXCEPTION_HANDLER': 'core.exceptions.custom_exception_handler',
 }
 
 SIMPLE_JWT = {
