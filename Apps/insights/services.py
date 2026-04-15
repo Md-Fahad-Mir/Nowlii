@@ -36,6 +36,71 @@ def _all_subtasks_done(quest) -> bool:
 
 
 # ─────────────────────────────────────────────
+#  Calendar Helper
+# ─────────────────────────────────────────────
+
+def _generate_calendar(start_date: date, end_date: date, quests: list, ref_date: date) -> list:
+    """
+    Generates a list of day statuses for the range [start_date, end_date].
+    Status can be: consistent, skipped, streak, none.
+    """
+    days_with_quests: dict[date, list] = defaultdict(list)
+    for q in quests:
+        if q.select_a_date:
+            days_with_quests[q.select_a_date].append(q)
+
+    # streak detection: consecutive days where all tasks done
+    # we need a bit more context for streaks (e.g. some days before start_date)
+    # but for simplicity let's just use what's in the 'quests' list
+    sorted_days = sorted(days_with_quests.keys())
+    streak_days: set[date] = set()
+    run, run_days = 0, []
+    for d in sorted_days:
+        day_qs = days_with_quests[d]
+        all_done = all(_all_subtasks_done(q) or q.task_done for q in day_qs)
+        if all_done:
+            run += 1
+            run_days.append(d)
+            if run >= 7:
+                streak_days.update(run_days[-7:])
+        else:
+            run, run_days = 0, []
+
+    calendar = []
+    current = start_date
+    while current <= end_date:
+        if current > ref_date:
+            # Future days should probably be 'none'
+            status = "none"
+            assigned = 0
+            completed = 0
+        elif current in streak_days:
+            day_qs = days_with_quests[current]
+            assigned = len(day_qs)
+            completed = sum(1 for q in day_qs if _all_subtasks_done(q) or q.task_done)
+            status = "streak"
+        elif current in days_with_quests:
+            day_qs = days_with_quests[current]
+            assigned = len(day_qs)
+            completed = sum(1 for q in day_qs if _all_subtasks_done(q) or q.task_done)
+            status = "consistent" if (completed == assigned and assigned > 0) else "skipped"
+        else:
+            status = "none"
+            assigned = 0
+            completed = 0
+        
+        calendar.append({
+            "date": current.isoformat(), 
+            "status": status,
+            "assigned": assigned,
+            "completed": completed
+        })
+        current += timedelta(days=1)
+    
+    return calendar
+
+
+# ─────────────────────────────────────────────
 #  Monthly Analytics
 # ─────────────────────────────────────────────
 
@@ -105,41 +170,15 @@ def get_monthly_analytics(user, ref: date = None) -> dict:
     quests_completed = {"assigned": assigned, "completed": completed}
 
     # ── 5. Calendar (consistent / skipped / streak) ──────────────────────
+    calendar = _generate_calendar(first, last, quests, ref)
+
+    # ── 6. Milestones ────────────────────────────────────────────────────
     days_with_quests: dict[date, list] = defaultdict(list)
     for q in quests:
         if q.select_a_date:
             days_with_quests[q.select_a_date].append(q)
-
-    # streak detection: consecutive days where all tasks done
     sorted_days = sorted(days_with_quests.keys())
-    streak_days: set[date] = set()
-    run, run_days = 0, []
-    for d in sorted_days:
-        day_qs = days_with_quests[d]
-        all_done = all(_all_subtasks_done(q) or q.task_done for q in day_qs)
-        if all_done:
-            run += 1
-            run_days.append(d)
-            if run >= 7:
-                streak_days.update(run_days[-7:])
-        else:
-            run, run_days = 0, []
 
-    calendar = []
-    current = first
-    while current <= last:
-        if current in streak_days:
-            status = "streak"
-        elif current in days_with_quests:
-            day_qs = days_with_quests[current]
-            all_done = all(_all_subtasks_done(q) or q.task_done for q in day_qs)
-            status = "consistent" if all_done else "skipped"
-        else:
-            status = "none"
-        calendar.append({"date": current.isoformat(), "status": status})
-        current += timedelta(days=1)
-
-    # ── 6. Milestones ────────────────────────────────────────────────────
     # longest streak (all-time for this user or just this month)
     longest_streak = 0
     run = 0
@@ -227,11 +266,15 @@ def get_weekly_analytics(user, ref: date = None) -> dict:
                 skipped_days.append(WEEKDAY_NAMES[d.weekday()])
         # days with no quests at all are not "skipped" — just empty
 
+    # ── Calendar ─────────────────────────────────────────────────────────
+    calendar = _generate_calendar(monday, sunday, quests, ref)
+
     return {
         "quests_completed":  completed_quests,
         "total_quests":      total_quests,
         "zone_progress":     zone_progress,
         "skipped_days":      skipped_days,
+        "calendar":          calendar,
         # ai_reflections is filled in by the AI layer
     }
 

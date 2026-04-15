@@ -16,8 +16,10 @@ class PreferredQuestTypesSerializer(serializers.Serializer):
 
 
 class CalendarDaySerializer(serializers.Serializer):
-    date   = serializers.DateField()
-    status = serializers.ChoiceField(choices=['consistent', 'skipped', 'streak', 'none'])
+    date      = serializers.DateField()
+    status    = serializers.ChoiceField(choices=['consistent', 'skipped', 'streak', 'none'])
+    assigned  = serializers.IntegerField()
+    completed = serializers.IntegerField()
 
 
 class MonthlyQuestsCompletedSerializer(serializers.Serializer):
@@ -48,12 +50,21 @@ class ZoneProgressSerializer(serializers.Serializer):
     ratio     = serializers.CharField()   # e.g. "3/5"
 
 
+class QuestSuggestionSerializer(serializers.Serializer):
+    task           = serializers.CharField()
+    description    = serializers.CharField()
+    zone           = serializers.CharField()
+    suggested_time = serializers.CharField()
+
+
 class WeeklyInsightSerializer(serializers.Serializer):
     quests_completed    = serializers.IntegerField()
     total_quests        = serializers.IntegerField()
     ai_reflections      = serializers.ListField(child=serializers.CharField())
+    quest_suggestions   = QuestSuggestionSerializer(many=True)
     zone_progress       = ZoneProgressSerializer(many=True)
     skipped_days        = serializers.ListField(child=serializers.CharField())
+    calendar            = CalendarDaySerializer(many=True)
 
 
 # ── Combined top-level response ───────────────────────────────────────────────

@@ -26,7 +26,24 @@ MOCK_ANALYTICS = {
             {"zone": "Elevated",    "assigned": 3, "completed": 2, "ratio": "2/3"},
             {"zone": "Power move",  "assigned": 2, "completed": 1, "ratio": "1/2"},
         ],
+        "quest_suggestions": [
+            {
+                "task": "Test Quest",
+                "description": "Motivational text",
+                "zone": "Soft steps",
+                "suggested_time": "12:00"
+            }
+        ],
         "skipped_days": ["Wednesday"],
+        "calendar": [
+            {"date": "2026-04-06", "status": "consistent", "assigned": 2, "completed": 2},
+            {"date": "2026-04-07", "status": "consistent", "assigned": 1, "completed": 1},
+            {"date": "2026-04-08", "status": "skipped",    "assigned": 3, "completed": 1},
+            {"date": "2026-04-09", "status": "consistent", "assigned": 2, "completed": 2},
+            {"date": "2026-04-10", "status": "consistent", "assigned": 1, "completed": 1},
+            {"date": "2026-04-11", "status": "consistent", "assigned": 2, "completed": 2},
+            {"date": "2026-04-12", "status": "consistent", "assigned": 1, "completed": 1},
+        ],
     },
     "monthly": {
         "most_completed_quests": [
@@ -42,8 +59,8 @@ MOCK_ANALYTICS = {
         },
         "quests_completed": {"assigned": 20, "completed": 14},
         "calendar": [
-            {"date": "2026-04-01", "status": "consistent"},
-            {"date": "2026-04-02", "status": "skipped"},
+            {"date": "2026-04-01", "status": "consistent", "assigned": 2, "completed": 2},
+            {"date": "2026-04-02", "status": "skipped",    "assigned": 1, "completed": 0},
         ],
         "milestones": {
             "quests_completed_this_month": 14,
@@ -61,11 +78,13 @@ class AIInsightViewTest(TestCase):
         self.client.force_authenticate(user=self.user)
 
     @override_settings(ANTHROPIC_API_KEY="fake-key", OPENAI_API_KEY=None, GOOGLE_AI_API_KEY=None)
+    @patch("Apps.insights.views.generate_quest_suggestions")
     @patch("Apps.insights.views.generate_weekly_reflections")
     @patch("Apps.insights.views.build_analytics_summary")
-    def test_insight_returns_200(self, mock_analytics, mock_reflect):
+    def test_insight_returns_200(self, mock_analytics, mock_reflect, mock_quest):
         mock_analytics.return_value = MOCK_ANALYTICS
         mock_reflect.return_value  = MOCK_REFLECTIONS
+        mock_quest.return_value    = MOCK_ANALYTICS["weekly"]["quest_suggestions"]
 
         res = self.client.get(INSIGHT_URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -73,21 +92,25 @@ class AIInsightViewTest(TestCase):
         self.assertIn("monthly", res.data)
 
     @override_settings(ANTHROPIC_API_KEY="fake-key", OPENAI_API_KEY=None, GOOGLE_AI_API_KEY=None)
+    @patch("Apps.insights.views.generate_quest_suggestions")
     @patch("Apps.insights.views.generate_weekly_reflections")
     @patch("Apps.insights.views.build_analytics_summary")
-    def test_weekly_contains_ai_reflections(self, mock_analytics, mock_reflect):
+    def test_weekly_contains_ai_reflections(self, mock_analytics, mock_reflect, mock_quest):
         mock_analytics.return_value = MOCK_ANALYTICS
         mock_reflect.return_value  = MOCK_REFLECTIONS
+        mock_quest.return_value    = MOCK_ANALYTICS["weekly"]["quest_suggestions"]
 
         res = self.client.get(INSIGHT_URL)
         self.assertEqual(len(res.data["weekly"]["ai_reflections"]), 3)
 
     @override_settings(ANTHROPIC_API_KEY="fake-key", OPENAI_API_KEY=None, GOOGLE_AI_API_KEY=None)
+    @patch("Apps.insights.views.generate_quest_suggestions")
     @patch("Apps.insights.views.generate_weekly_reflections")
     @patch("Apps.insights.views.build_analytics_summary")
-    def test_cache_prevents_second_ai_call(self, mock_analytics, mock_reflect):
+    def test_cache_prevents_second_ai_call(self, mock_analytics, mock_reflect, mock_quest):
         mock_analytics.return_value = MOCK_ANALYTICS
         mock_reflect.return_value  = MOCK_REFLECTIONS
+        mock_quest.return_value    = MOCK_ANALYTICS["weekly"]["quest_suggestions"]
 
         self.client.get(INSIGHT_URL)   # first call — hits AI
         self.client.get(INSIGHT_URL)   # second call — should use cache
@@ -96,11 +119,13 @@ class AIInsightViewTest(TestCase):
         self.assertEqual(mock_reflect.call_count, 1)
 
     @override_settings(ANTHROPIC_API_KEY="fake-key", OPENAI_API_KEY=None, GOOGLE_AI_API_KEY=None)
+    @patch("Apps.insights.views.generate_quest_suggestions")
     @patch("Apps.insights.views.generate_weekly_reflections")
     @patch("Apps.insights.views.build_analytics_summary")
-    def test_refresh_bypasses_cache(self, mock_analytics, mock_reflect):
+    def test_refresh_bypasses_cache(self, mock_analytics, mock_reflect, mock_quest):
         mock_analytics.return_value = MOCK_ANALYTICS
         mock_reflect.return_value  = MOCK_REFLECTIONS
+        mock_quest.return_value    = MOCK_ANALYTICS["weekly"]["quest_suggestions"]
 
         self.client.get(INSIGHT_URL)                    # prime cache
         self.client.get(INSIGHT_URL + "?refresh=true")  # force refresh
@@ -118,3 +143,34 @@ class AIInsightViewTest(TestCase):
         self.client.force_authenticate(user=None)
         res = self.client.get(INSIGHT_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+from .services import get_weekly_analytics, get_monthly_analytics
+from Apps.quests.models import Quests
+
+class ServiceLogicTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="logicuser", password="testpass")
+        # Create a quest for today
+        Quests.objects.create(
+            user=self.user,
+            task="Test Task",
+            select_a_date=date.today(),
+            task_done=True
+        )
+
+    def test_weekly_analytics_includes_calendar(self):
+        data = get_weekly_analytics(self.user, date.today())
+        self.assertIn("calendar", data)
+        self.assertEqual(len(data["calendar"]), 7)
+        # Check if today is "consistent"
+        today_iso = date.today().isoformat()
+        today_data = next(d for d in data["calendar"] if d["date"] == today_iso)
+        self.assertEqual(today_data["status"], "consistent")
+        self.assertEqual(today_data["assigned"], 1)
+        self.assertEqual(today_data["completed"], 1)
+
+    def test_monthly_analytics_includes_calendar(self):
+        data = get_monthly_analytics(self.user, date.today())
+        self.assertIn("calendar", data)
+        self.assertTrue(len(data["calendar"]) >= 28)

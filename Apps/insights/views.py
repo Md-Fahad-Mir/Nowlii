@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 from .services import build_analytics_summary
-from .ai_client import generate_weekly_reflections, get_active_provider
+from .ai_client import generate_weekly_reflections, generate_quest_suggestions, get_active_provider
 from .serializers import AIInsightResponseSerializer
 from .models import InsightCache
 
@@ -52,22 +52,34 @@ class AIInsightView(APIView):
         week_key  = ref.strftime("W%Y-%W")
         month_key = ref.strftime("%Y-%m")
 
-        # ── 3. AI reflections (weekly) — with cache ───────────────────────
-        ai_reflections = []
-        cache_obj      = None
+        # ── 3. AI reflections & Quest suggestions — with cache ────────────────
+        ai_reflections    = []
+        quest_suggestions = []
+        cache_obj         = None
 
         if not refresh:
             try:
                 cache_obj = InsightCache.objects.get(
                     user=user, period="weekly", period_key=week_key
                 )
-                ai_reflections = cache_obj.payload.get("ai_reflections", [])
+                ai_reflections    = cache_obj.payload.get("ai_reflections", [])
+                quest_suggestions = cache_obj.payload.get("quest_suggestions", [])
             except InsightCache.DoesNotExist:
                 pass
 
-        if not ai_reflections:
+        # If either is missing, we regenerate both (or we could be more granular, 
+        # but for simplicity let's regenerate both if one is missing or expired)
+        if not ai_reflections or not quest_suggestions:
             try:
-                ai_reflections = generate_weekly_reflections(weekly_data)
+                # Get current time/day for suggestions
+                from django.utils import timezone
+                now = timezone.now()
+                current_time = now.strftime("%H:%M")
+                day_of_week  = now.strftime("%A")
+
+                # Parallel-ready calls (sequential for now)
+                ai_reflections    = generate_weekly_reflections(weekly_data)
+                quest_suggestions = generate_quest_suggestions(weekly_data, current_time, day_of_week)
             except EnvironmentError as e:
                 return Response({"error": str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             except json.JSONDecodeError:
@@ -75,13 +87,8 @@ class AIInsightView(APIView):
                     {"error": "AI returned an unexpected response. Please try again."},
                     status=status.HTTP_502_BAD_GATEWAY
                 )
-            except (anthropic.APIError, openai.OpenAIError) as e:
-                return Response(
-                    {"error": f"AI service error: {str(e)}"},
-                    status=status.HTTP_502_BAD_GATEWAY
-                )
             except Exception as e:
-                logger.exception("AI reflection generation failed")
+                logger.exception("AI generation failed")
                 return Response(
                     {"error": f"Unexpected error: {str(e)}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -90,11 +97,17 @@ class AIInsightView(APIView):
             # Save to cache
             InsightCache.objects.update_or_create(
                 user=user, period="weekly", period_key=week_key,
-                defaults={"payload": {"ai_reflections": ai_reflections}}
+                defaults={
+                    "payload": {
+                        "ai_reflections": ai_reflections,
+                        "quest_suggestions": quest_suggestions
+                    }
+                }
             )
 
         # ── 4. Assemble final response ────────────────────────────────────
-        weekly_data["ai_reflections"] = ai_reflections
+        weekly_data["ai_reflections"]    = ai_reflections
+        weekly_data["quest_suggestions"] = quest_suggestions
 
         payload = {
             "weekly":  weekly_data,
