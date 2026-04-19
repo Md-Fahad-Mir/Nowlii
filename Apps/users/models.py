@@ -152,8 +152,8 @@ class ForgotPasswordRequest(models.Model):
 # NOWLII PREDEFINED OPTIONS
 # ------------------------------------------------------------------------------
 class NowliiPredefinedOption(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    avatar_logo = models.URLField()
+    name = models.CharField(max_length=50, unique=True, help_text="The unique name of the Nowlii character (e.g., 'Sparky')")
+    avatar_logo = models.URLField(help_text="The URL to the avatar image/logo for this Nowlii character")
 
     def __str__(self):
         return self.name

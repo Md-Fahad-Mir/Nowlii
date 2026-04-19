@@ -51,8 +51,84 @@ from .serializers import (
 # ------------------------------------------------------------------------------
 @method_decorator(name='list', decorator=swagger_auto_schema(
     operation_summary="List available Nowlii names and avatars",
-    operation_description="Fetch the list of predefined Nowlii options. Publicly accessible.",
-    tags=['Nowlii Options']
+    operation_description="Fetch the list of predefined Nowlii options. These options include default names and avatar URLs that users can choose for their profiles.",
+    tags=['Nowlii Options'],
+    responses={
+        200: openapi.Response(
+            description="Success",
+            schema=NowliiPredefinedOptionSerializer(many=True),
+            examples={
+                "application/json": [
+                    {
+                        "id": 1,
+                        "name": "Nowlii Bot",
+                        "avatar_logo": "https://example.com/avatar1.png"
+                    }
+                ]
+            }
+        )
+    }
+))
+@method_decorator(name='create', decorator=swagger_auto_schema(
+    operation_summary="Create a new Nowlii option",
+    operation_description="Add a new predefined Nowlii name and avatar logo URL to the system. Typically used by admins to expand the available selection.",
+    tags=['Nowlii Options'],
+    request_body=NowliiPredefinedOptionSerializer,
+    responses={
+        201: openapi.Response(
+            description="Created successfully",
+            schema=NowliiPredefinedOptionSerializer()
+        ),
+        400: "Bad Request - Invalid data"
+    }
+))
+@method_decorator(name='retrieve', decorator=swagger_auto_schema(
+    operation_summary="Retrieve a Nowlii option",
+    operation_description="Fetch details of a specific predefined Nowlii option by its unique ID.",
+    tags=['Nowlii Options'],
+    responses={
+        200: openapi.Response(
+            description="Success",
+            schema=NowliiPredefinedOptionSerializer()
+        ),
+        404: "Not Found"
+    }
+))
+@method_decorator(name='update', decorator=swagger_auto_schema(
+    operation_summary="Update a Nowlii option",
+    operation_description="Update all fields of an existing predefined Nowlii option by its ID.",
+    tags=['Nowlii Options'],
+    request_body=NowliiPredefinedOptionSerializer,
+    responses={
+        200: openapi.Response(
+            description="Updated successfully",
+            schema=NowliiPredefinedOptionSerializer()
+        ),
+        400: "Bad Request",
+        404: "Not Found"
+    }
+))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(
+    operation_summary="Partially update a Nowlii option",
+    operation_description="Update specific fields of an existing predefined Nowlii option.",
+    tags=['Nowlii Options'],
+    request_body=NowliiPredefinedOptionSerializer,
+    responses={
+        200: openapi.Response(
+            description="Updated successfully",
+            schema=NowliiPredefinedOptionSerializer()
+        ),
+        404: "Not Found"
+    }
+))
+@method_decorator(name='destroy', decorator=swagger_auto_schema(
+    operation_summary="Delete a Nowlii option",
+    operation_description="Remove a predefined Nowlii option from the system by its ID.",
+    tags=['Nowlii Options'],
+    responses={
+        204: "Deleted successfully",
+        404: "Not Found"
+    }
 ))
 class NowliiPredefinedOptionViewSet(viewsets.ModelViewSet):
     queryset = NowliiPredefinedOption.objects.all()
