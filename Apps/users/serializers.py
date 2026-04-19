@@ -55,6 +55,10 @@ class NowliiPredefinedOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = NowliiPredefinedOption
         fields = '__all__'
+        extra_kwargs = {
+            'name': {'help_text': "The unique name of the Nowlii character"},
+            'avatar_logo': {'help_text': "The URL to the avatar image logo"}
+        }
 
 
 # ------------------------------------------------------------------------------
