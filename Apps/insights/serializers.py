@@ -32,7 +32,7 @@ class MilestoneSerializer(serializers.Serializer):
 
 class MonthlyInsightSerializer(serializers.Serializer):
     most_completed_quests  = MostCompletedQuestSerializer(many=True)
-    most_productive_day    = serializers.CharField()
+    most_productive_day    = serializers.CharField(allow_blank=True, allow_null=True)
     preferred_quest_types  = PreferredQuestTypesSerializer()
     quests_completed       = MonthlyQuestsCompletedSerializer()
     calendar               = CalendarDaySerializer(many=True)

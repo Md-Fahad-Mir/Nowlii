@@ -6,7 +6,7 @@ Priority: ANTHROPIC → OPENAI → GOOGLE
 import json
 import anthropic
 import openai
-import google.generativeai as genai
+from google import genai
 from django.conf import settings
 
 
@@ -84,9 +84,11 @@ def _call_chatgpt(prompt: str) -> list:
 
 
 def _call_gemini(prompt: str) -> list:
-    genai.configure(api_key=settings.GOOGLE_AI_API_KEY)
-    model = genai.GenerativeModel("gemini-flash-latest")
-    response = model.generate_content(prompt)
+    client = genai.Client(api_key=settings.GOOGLE_AI_API_KEY)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
     return _parse(response.text)
 
 
