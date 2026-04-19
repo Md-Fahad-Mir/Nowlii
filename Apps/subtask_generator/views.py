@@ -1,7 +1,7 @@
 import json
 import anthropic
 import openai
-import google.generativeai as genai
+from google import genai
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -90,9 +90,11 @@ def call_chatgpt(prompt: str) -> list:
 
 
 def call_gemini(prompt: str) -> list:
-    genai.configure(api_key=settings.GOOGLE_AI_API_KEY)
-    model = genai.GenerativeModel("gemini-flash-latest")
-    response = model.generate_content(prompt)
+    client = genai.Client(api_key=settings.GOOGLE_AI_API_KEY)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
     return parse_response(response.text)
 
 
