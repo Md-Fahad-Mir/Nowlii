@@ -54,7 +54,7 @@ from .serializers import (
     operation_description="Fetch the list of predefined Nowlii options. Publicly accessible.",
     tags=['Nowlii Options']
 ))
-class NowliiPredefinedOptionViewSet(viewsets.ReadOnlyModelViewSet):
+class NowliiPredefinedOptionViewSet(viewsets.ModelViewSet):
     queryset = NowliiPredefinedOption.objects.all()
     serializer_class = NowliiPredefinedOptionSerializer
     permission_classes = [AllowAny]
