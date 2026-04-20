@@ -28,11 +28,12 @@ echo "Collecting static files..."
 python manage.py collectstatic --noinput --clear
 
 # 4. Create superuser only if credentials are provided
-if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
-  echo "Creating superuser..."
-  python manage.py createsuperuser --noinput || echo "Superuser already exists or creation failed"
+# 4. Create superuser only if credentials are provided
+if [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
+  echo "Attempting to create superuser ($DJANGO_SUPERUSER_EMAIL)..."
+  python manage.py createsuperuser --noinput 2>&1 || echo "Superuser creation skipped (likely already exists)."
 else
-  echo "Skipping superuser creation - credentials not provided"
+  echo "Skipping superuser creation - DJANGO_SUPERUSER_EMAIL or DJANGO_SUPERUSER_PASSWORD not provided"
 fi
 
 echo "Entrypoint script completed successfully!"
