@@ -13,7 +13,7 @@ services:
     image: fahad1000mir/nowlii-backend:dev
     container_name: nowlii-backend
     ports:
-      - "8001:8001"
+      - "8000:8000"
     volumes:
       - .:/app
       - venv_volume:/app/.venv
@@ -21,11 +21,11 @@ services:
       - .env
     environment:
       - DEBUG=True
-      - DB_HOST=
+    #   - DB_HOST=
     #   - REDIS_HOST=redis
     # depends_on:
     #   - redis
-    command: python manage.py runserver 0.0.0.0:8001
+    command: python manage.py runserver 0.0.0.0:8000
     restart: always
 
 volumes:
