@@ -64,7 +64,10 @@ class QuestsViewset(viewsets.ModelViewSet):
 
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        if getattr(self, 'swagger_fake_view', False):
+            return Quests.objects.none()
+            
+        queryset = super().get_queryset().filter(user=self.request.user)
         filter_value = self.request.query_params.get('due_date')
 
         if filter_value:
@@ -199,3 +202,9 @@ class SubTasksViewset(viewsets.ModelViewSet):
     serializer_class = SubTasksSerializers
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return SubTasks.objects.none()
+            
+        return super().get_queryset().filter(task__user=self.request.user)

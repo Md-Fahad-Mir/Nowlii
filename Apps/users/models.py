@@ -183,7 +183,7 @@ class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile', null=True, blank=True)
     name = models.CharField(max_length=50, blank=True, null=True)
     gender = models.CharField(max_length=150, choices=GENDER_CHOICES, blank=True, null=True)
-    profile_image = models.URLField(blank=True, null=True)
+    profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
     
     # Redesigned fields
     predefined_option = models.ForeignKey(NowliiPredefinedOption, on_delete=models.SET_NULL, null=True, blank=True)
