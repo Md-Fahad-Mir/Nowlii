@@ -35,17 +35,26 @@ class URLOrUploadedFileField(serializers.Field):
     def to_representation(self, value):
         if not value:
             return None
+            
+        # Extract the string URL if it's an ImageFieldFile
+        if hasattr(value, 'url'):
+            try:
+                value_str = value.url
+            except ValueError:
+                return None
+        else:
+            value_str = str(value)
         
         # If it's already a full URL, return as is
-        if value.startswith(('http://', 'https://')):
-            return value
+        if value_str.startswith(('http://', 'https://')):
+            return value_str
         
         # Build full URL for relative paths
         request = self.context.get('request')
         if request:
-            return request.build_absolute_uri(value)
+            return request.build_absolute_uri(value_str)
         
-        return value
+        return value_str
 
 
 # ------------------------------------------------------------------------------

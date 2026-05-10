@@ -42,9 +42,6 @@ urlpatterns = [
 
 ]
 
-from django.views.static import serve
-
-# Serve media files (in both dev and prod, since there's no Nginx container)
-urlpatterns += [
-    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
-]
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
