@@ -196,7 +196,12 @@ USE_TZ = True
 # ------------------------------------------------------------------------------
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # AWS S3 Media Configuration
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -211,13 +216,18 @@ if AWS_ACCESS_KEY_ID:
     AWS_DEFAULT_ACL = os.getenv('AWS_DEFAULT_ACL') or None
     AWS_S3_VERIFY = os.getenv('AWS_S3_VERITY', 'True') == 'True'
     
-    # Use S3 for media storage
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    # Use S3 for media storage (Django 4.2+ format)
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    }
     
     # For generated media URLs
     MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/"
 else:
     # Local fallback
+    STORAGES["default"] = {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    }
     MEDIA_URL = '/media/'
 
 
