@@ -216,13 +216,17 @@ if AWS_ACCESS_KEY_ID:
     AWS_DEFAULT_ACL = os.getenv('AWS_DEFAULT_ACL') or None
     AWS_S3_VERIFY = os.getenv('AWS_S3_VERITY', 'True') == 'True'
     
+    # Ensure URLs are clean (no ?X-Amz-Signature) and use the exact region domain
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+    
     # Use S3 for media storage (Django 4.2+ format)
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
     }
     
     # For generated media URLs
-    MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
 else:
     # Local fallback
     STORAGES["default"] = {
