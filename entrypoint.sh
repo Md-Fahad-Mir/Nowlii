@@ -3,20 +3,37 @@ set -e
 
 echo "Starting Django entrypoint script..."
 
-# 1. Wait for database (only if DB_HOST is set)
+# 1. Wait for database (only if DB_HOST is set — used with AWS RDS or any external PG)
 if [ -n "$DB_HOST" ]; then
-  echo "Waiting for database at $DB_HOST:$DB_PORT..."
-  # Try to wait for the database to be ready
-  # If 'nc' is available (installed in Dockerfile), we can use it
-  if command -v nc >/dev/null 2>&1; then
-    while ! nc -z "$DB_HOST" "${DB_PORT:-5432}"; do
-      sleep 1
-    done
-    echo "Database is ready!"
-  else
-    echo "Waiting 5 seconds for database..."
-    sleep 5
-  fi
+  echo "Waiting for PostgreSQL at $DB_HOST:${DB_PORT:-5432}..."
+  # Use Python + psycopg2 to test a real connection (more reliable than nc for RDS)
+  RETRIES=30
+  until python -c "
+import sys, os
+import psycopg2
+try:
+    psycopg2.connect(
+        dbname=os.environ['DB_NAME'],
+        user=os.environ['DB_USER'],
+        password=os.environ['DB_PASSWORD'],
+        host=os.environ['DB_HOST'],
+        port=os.environ.get('DB_PORT', '5432'),
+        connect_timeout=5,
+    )
+    print('DB connection successful.')
+    sys.exit(0)
+except Exception as e:
+    print(f'DB not ready: {e}')
+    sys.exit(1)
+" 2>&1; do
+    RETRIES=$((RETRIES - 1))
+    if [ "$RETRIES" -le 0 ]; then
+      echo "ERROR: Could not connect to database after multiple retries. Exiting."
+      exit 1
+    fi
+    echo "Retrying in 2 seconds... ($RETRIES retries left)"
+    sleep 2
+  done
 fi
 
 # 2. Apply database migrations
