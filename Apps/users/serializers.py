@@ -66,7 +66,7 @@ class NowliiPredefinedOptionSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {
             'name': {'help_text': "The unique name of the Nowlii character"},
-            'avatar_logo': {'help_text': "The URL to the avatar image logo"}
+            'avatar_logo': {'help_text': "The avatar image logo"}
         }
 
 

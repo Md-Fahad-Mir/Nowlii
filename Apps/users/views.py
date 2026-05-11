@@ -62,7 +62,7 @@ from .serializers import (
                     {
                         "id": 1,
                         "name": "Nowlii Bot",
-                        "avatar_logo": "https://example.com/avatar1.png"
+                        "avatar_logo": "/media/nowlii_logos/sparky.png"
                     }
                 ]
             }

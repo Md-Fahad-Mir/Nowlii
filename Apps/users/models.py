@@ -153,7 +153,7 @@ class ForgotPasswordRequest(models.Model):
 # ------------------------------------------------------------------------------
 class NowliiPredefinedOption(models.Model):
     name = models.CharField(max_length=50, unique=True, help_text="The unique name of the Nowlii character (e.g., 'Sparky')")
-    avatar_logo = models.URLField(help_text="The URL to the avatar image/logo for this Nowlii character")
+    avatar_logo = models.ImageField(upload_to='nowlii_logos/', null=True, blank=True, help_text="The avatar image/logo for this Nowlii character")
 
     def __str__(self):
         return self.name
@@ -187,7 +187,7 @@ class Profile(models.Model):
     
     # Redesigned fields
     predefined_option = models.ForeignKey(NowliiPredefinedOption, on_delete=models.SET_NULL, null=True, blank=True)
-    avatar_logo = models.URLField(blank=True, null=True)  # Denormalized for quick access or custom override
+    avatar_logo = models.ImageField(upload_to='user_avatars/', blank=True, null=True)  # Denormalized for quick access or custom override
     nowlii_name = models.CharField(max_length=50, blank=True, null=True) # Denormalized for quick access or custom override
     custom_nowlii_name = models.CharField(max_length=50, blank=True, null=True)
     
