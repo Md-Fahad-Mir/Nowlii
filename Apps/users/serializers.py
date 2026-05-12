@@ -18,16 +18,17 @@ class URLOrUploadedFileField(serializers.Field):
             return None
 
         if hasattr(data, 'read'):
-            filename = default_storage.save(
+            # Save to storage and return only the storage KEY (relative path),
+            # NOT the full URL. The model's ImageField stores the key; the URL
+            # is built on read via .url — avoiding double-URL encoding.
+            storage_key = default_storage.save(
                 f'profile_images/{data.name}',
                 ContentFile(data.read())
             )
-            try:
-                return default_storage.url(filename)
-            except Exception:
-                return filename
+            return storage_key  # e.g. "profile_images/avatar.png"
 
         if isinstance(data, str):
+            # Accept a plain URL / relative path sent by client (no re-upload)
             return data.strip() or None
 
         raise serializers.ValidationError('Invalid value for profile_image.')
@@ -35,25 +36,30 @@ class URLOrUploadedFileField(serializers.Field):
     def to_representation(self, value):
         if not value:
             return None
-            
-        # Extract the string URL if it's an ImageFieldFile
+
+        # ImageFieldFile — ask storage for the URL
         if hasattr(value, 'url'):
             try:
-                value_str = value.url
+                return value.url   # S3Boto3Storage returns a full HTTPS URL
             except ValueError:
                 return None
-        else:
-            value_str = str(value)
-        
-        # If it's already a full URL, return as is
+
+        value_str = str(value)
+
+        # Already a full URL (e.g. previously stored URL string)
         if value_str.startswith(('http://', 'https://')):
             return value_str
-        
-        # Build full URL for relative paths
+
+        # Relative path — try to build via storage first, then fall back to request
+        try:
+            return default_storage.url(value_str)
+        except Exception:
+            pass
+
         request = self.context.get('request')
         if request:
             return request.build_absolute_uri(value_str)
-        
+
         return value_str
 
 

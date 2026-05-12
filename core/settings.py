@@ -213,7 +213,7 @@ if AWS_ACCESS_KEY_ID:
     AWS_S3_SIGNATURE_NAME = os.getenv('AWS_S3_SIGNATURE_NAME', 's3v4')
     AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'eu-north-1')
     AWS_S3_FILE_OVERWRITE = os.getenv('AWS_S3_FILE_OVERWRITE', 'False') == 'True'
-    AWS_DEFAULT_ACL = os.getenv('AWS_DEFAULT_ACL') or None
+    AWS_DEFAULT_ACL = None  # Bucket has ACLs disabled (BucketOwnerEnforced)
     AWS_S3_VERIFY = os.getenv('AWS_S3_VERITY', 'True') == 'True'
     
     # Ensure URLs are clean (no ?X-Amz-Signature) and use the exact region domain
